@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔍 ภารกิจลับ — รับน้อง</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700&display=swap');
+  :root {
+    --bg:#0d0d1a; --card:#16162a; --accent:#7c3aed; --glow:#a855f7;
+    --green:#22c55e; --red:#ef4444; --text:#e2e8f0; --muted:#64748b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Kanit',sans-serif;min-height:100vh;padding:16px}
+
+  header{text-align:center;padding:32px 16px 16px}
+  header h1{font-size:clamp(1.6rem,5vw,2.2rem);font-weight:700;background:linear-gradient(135deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:6px}
+  header p{color:var(--muted);font-size:.9rem}
+
+  /* Nav tabs */
+  .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:20px auto;max-width:480px}
+  .tab{flex:1;min-width:70px;max-width:100px;padding:10px 6px;border-radius:12px;border:1.5px solid #2a2a4a;background:var(--card);color:var(--muted);font-family:'Kanit',sans-serif;font-size:.85rem;font-weight:600;cursor:pointer;transition:all .2s;text-align:center}
+  .tab.active{border-color:var(--accent);color:#fff;box-shadow:0 0 12px #7c3aed50}
+  .tab.done{border-color:var(--green);color:var(--green)}
+  .tab.done.active{box-shadow:0 0 12px #22c55e40}
+
+  /* Mission card */
+  .card{max-width:640px;margin:0 auto;background:var(--card);border-radius:16px;border:1.5px solid #2a2a4a;padding:24px;display:none}
+  .card.show{display:block}
+
+  .card-header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+  .badge{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#ec4899);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1.1rem;flex-shrink:0}
+  .badge.done{background:var(--green)}
+  .card-title{font-size:1.1rem;font-weight:700}
+  .card-sub{font-size:.85rem;color:var(--muted)}
+
+  .video-wrap{position:relative;width:100%;padding-top:56.25%;background:#0a0a18;border-radius:12px;overflow:hidden;margin-bottom:18px}
+  .video-wrap video,.video-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:none}
+
+  .input-row{display:flex;gap:8px}
+  .input-row input{flex:1;background:#0d0d1a;border:1.5px solid #2a2a4a;border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Kanit',sans-serif;font-size:1rem;outline:none;transition:border-color .2s}
+  .input-row input:focus{border-color:var(--glow)}
+  .input-row input.wrong{border-color:var(--red);animation:shake .3s}
+  .input-row input.correct{border-color:var(--green)}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+  .btn{background:linear-gradient(135deg,var(--accent),#ec4899);color:#fff;border:none;border-radius:10px;padding:11px 20px;font-family:'Kanit',sans-serif;font-size:1rem;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn:active{opacity:.85}
+
+  .feedback{margin-top:8px;font-size:.88rem;min-height:18px}
+  .feedback.ok{color:var(--green)}
+  .feedback.err{color:var(--red)}
+
+  /* nav buttons below card */
+  .card-nav{display:flex;justify-content:space-between;margin-top:20px;gap:8px}
+  .nav-btn{background:#1e1e3a;color:var(--text);border:1px solid #2a2a4a;border-radius:10px;padding:9px 18px;font-family:'Kanit',sans-serif;font-size:.9rem;cursor:pointer;transition:background .2s}
+  .nav-btn:hover{background:#2a2a4a}
+  .nav-btn:disabled{opacity:.3;cursor:default}
+
+  /* Reveal */
+  #reveal{display:none;max-width:480px;margin:30px auto 60px;text-align:center;animation:fadeUp .8s ease}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+  #reveal h2{font-size:clamp(1.4rem,4vw,1.8rem);font-weight:700;background:linear-gradient(135deg,#a855f7,#ec4899,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  #reveal .full-photo{width:min(200px,60vw);height:min(200px,60vw);object-fit:cover;border-radius:50%;border:4px solid var(--glow);box-shadow:0 0 30px #a855f780;margin:20px auto;display:block}
+  #reveal .reveal-name{font-size:clamp(1.5rem,5vw,2rem);font-weight:700;letter-spacing:2px;margin-top:12px}
+  #reveal p{color:var(--muted);margin-top:8px}
+  #revealStats{margin:16px auto 0;font-size:.95rem;color:var(--muted);background:#1e1e3a;border-radius:10px;padding:12px 20px;display:inline-block}
+  #revealStats b{color:var(--text)}
+  .social-row{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+  .social-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:12px;font-family:'Kanit',sans-serif;font-size:.95rem;font-weight:600;text-decoration:none;transition:opacity .2s}
+  .social-btn:hover{opacity:.85}
+  .social-fb{background:#1877f2;color:#fff}
+  .social-ig{background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af);color:#fff}
+
+  #confetti{position:fixed;inset:0;pointer-events:none;z-index:999}
+
+  /* Lightbox */
+  #reveal .full-photo{cursor:zoom-in}
+  #lb{display:none;position:fixed;inset:0;background:#000d;z-index:1001;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+  #lb.open{display:flex}
+  #lb-img{max-width:90vw;max-height:75vh;border-radius:12px;object-fit:contain;transform-origin:center;transition:transform .15s;user-select:none;touch-action:none}
+  #lb-close{position:absolute;top:14px;right:18px;font-size:1.8rem;color:#fff;background:none;border:none;cursor:pointer;line-height:1}
+  .lb-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+  .lb-btn{background:#1e1e3a;color:var(--text);border:1px solid #2a2a4a;border-radius:10px;padding:9px 18px;font-family:'Kanit',sans-serif;font-size:.9rem;cursor:pointer;text-decoration:none;display:inline-block}
+  .lb-btn:hover{background:#2a2a4a}
+
+  /* Music button */
+  #music-btn{position:fixed;top:14px;right:14px;z-index:500;background:#1e1e3a;border:1px solid #2a2a4a;color:#fff;border-radius:50%;width:44px;height:44px;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .2s}
+  #music-btn:hover{background:#2a2a4a}
+
+  /* Personal message */
+  .msg-box{background:#1e1e3a;border-left:3px solid var(--glow);border-radius:0 10px 10px 0;padding:14px 18px;margin:18px 0;text-align:left;font-size:.95rem;line-height:1.7;font-style:italic;color:var(--text)}
+
+  /* Hall of Fame */
+  #hof{margin-top:26px;padding-top:22px;border-top:1px solid #2a2a4a}
+  #hof h3{font-size:1.05rem;font-weight:700;margin-bottom:12px}
+  .hof-row{display:flex;gap:8px}
+  .hof-row input{flex:1;background:#0d0d1a;border:1.5px solid #2a2a4a;border-radius:10px;padding:10px 14px;color:var(--text);font-family:'Kanit',sans-serif;font-size:.95rem;outline:none;transition:border-color .2s}
+  .hof-row input:focus{border-color:var(--glow)}
+  #hof-status{margin-top:8px;font-size:.88rem;min-height:18px}
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+<audio id="bgm" loop src="music.mp3" preload="auto"></audio>
+<button id="music-btn" title="เปิด/ปิดเพลง">🔇</button>
+
+<header>
+  <h1>🔍 ภารกิจลับ</h1>
+  <p>เลือกทำภารกิจใดก่อนก็ได้ — ทำให้ครบทั้ง 4 ภารกิจ!</p>
+</header>
+
+<div class="tabs" id="tabs"></div>
+<div id="missions"></div>
+<div id="reveal">
+  <h2>🎉 ยินดีด้วย! ผ่านทุกภารกิจแล้ว!</h2>
+  <img id="revealPhoto" class="full-photo" src="" alt="" onclick="openLightbox(this.src)">
+  <div class="msg-box" id="revealMsg"></div>
+  <div class="reveal-name" id="revealName"></div>
+  <div id="revealStats"></div>
+  <p>ขอบคุณที่ร่วมกิจกรรมรับน้อง 💜</p>
+  <div class="social-row">
+    <a class="social-btn social-fb" href="https://www.facebook.com/chatchai.new.2025?locale=th_TH" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.235 2.686.235v2.97h-1.513c-1.491 0-1.956.93-1.956 1.883v2.258h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/></svg>
+      Facebook
+    </a>
+    <a class="social-btn social-ig" href="https://www.instagram.com/chatchai_newsoyes/" target="_blank" rel="noopener">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      Instagram
+    </a>
+  </div>
+  <div id="hof">
+    <h3>🏆 กรอกชื่อน้องๆ ผู้ผ่านภารกิจ</h3>
+    <div class="hof-row">
+      <input type="text" id="hof-inp" placeholder="ชื่อของคุณ…" autocomplete="off" maxlength="50">
+      <button class="btn" onclick="window.submitHof()">บันทึก</button>
+    </div>
+    <div id="hof-status"></div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lb">
+  <button id="lb-close" onclick="closeLightbox()">✕</button>
+  <img id="lb-img" src="" alt="">
+  <div class="lb-row">
+    <button class="lb-btn" onclick="lbZoom(-0.25)">➖ ย่อ</button>
+    <button class="lb-btn" onclick="lbZoom(0.25)">➕ ขยาย</button>
+    <a id="lb-dl" class="lb-btn" download="photo.jpg">💾 บันทึกรูป</a>
+  </div>
+</div>
+<script>
+const CONFIG = {
+  name: "พี่นิว (ชัชชัย ใยมาก)",
+  fullPhoto: "full.jpg",
+  music: "music.mp3",          // ← ใส่ไฟล์เพลงในโฟลเดอร์เดียวกัน
+  message: "ยินดีต้อนรับน้องใหม่ทุกคนนะ 💜 ขอบคุณที่ทำภารกิจจนครบ หวังว่าจะสนุกกับกิจกรรมวันนี้นะ!",  // ← ข้อความถึงน้อง
+  sheetsUrl: "https://script.google.com/macros/s/AKfycbzoGfMC7gIMBFRhqc0sp5T1DGOFmmR64vjZFdpa1Z2Eh2L_3Mi_eLxmmblfrHATDMJ38A/exec",
+  missions: [
+    { title:"ภารกิจที่ 1", hint:"ดูคลิปแล้วไปหาคำตอบที่สถานที่นั้น!", video:"video1.mp4", answer:"เธอกับฉันแค่ฝันก็พอ" },
+    { title:"ภารกิจที่ 2", hint:"ดูคลิปแล้วไปหาคำตอบที่สถานที่นั้น!", video:"video2.mp4", answer:"เหยดลู้โครตเสี่ยว" },
+    { title:"ภารกิจที่ 3", hint:"ดูคลิปแล้วไปหาคำตอบที่สถานที่นั้น!", video:"video3.mp4", answer:"แอบขนาดนี้เจอได้ไงว่ะ" },
+    { title:"ภารกิจที่ 4", hint:"ดูคลิปแล้วไปหาคำตอบที่สถานที่นั้น!", video:"video4.mp4", answer:"ว่าแล้วมึงต้องอ่าน" },
+  ]
+};
+</script>
+<!-- ═══════════════════════════ -->
+
+<script>
+(function(){
+  const K_DONE   = 'babyoi_done';
+  const K_START  = 'babyoi_start';
+  const K_END    = 'babyoi_end';
+  const K_WRONGS = 'babyoi_wrongs';
+
+  const done = JSON.parse(localStorage.getItem(K_DONE) || '[]');
+  let wrongs = parseInt(localStorage.getItem(K_WRONGS) || '0', 10);
+  let startMs = parseInt(localStorage.getItem(K_START) || '0', 10);
+  let endMs   = parseInt(localStorage.getItem(K_END)   || '0', 10);
+
+  // Start timer on first ever load
+  if (!startMs) {
+    startMs = Date.now();
+    localStorage.setItem(K_START, startMs);
+  }
+
+  const WRONG_MSGS = [
+    '❌ โอ้โหไม่ใช่นะ 😅',
+    '❌ ลองดูคลิปอีกทีดิ 👀',
+    '❌ ใกล้แล้ว... หรือเปล่า? 🤔',
+    '❌ ไม่ถูกอ่ะ ลองใหม่! 😬',
+    '❌ เฮ้! ไม่ใช่อันนั้น 😂',
+    '❌ คิดดีๆ ก่อนกด 🧐',
+  ];
+
+  function fmtTime(ms) {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    return m > 0 ? `${m} นาที ${s % 60} วินาที` : `${s} วินาที`;
+  }
+
+  function isYoutube(s) { return /youtube\.com|youtu\.be/.test(s); }
+
+  let current = 0;
+
+  // Define BEFORE calling
+  window.switchTo = function(i) {
+    if (i < 0 || i >= CONFIG.missions.length) return;
+    current = i;
+    document.querySelectorAll('.card').forEach((c,j) => c.classList.toggle('show', j===i));
+    document.querySelectorAll('.tab').forEach((t,j) => t.classList.toggle('active', j===i));
+  };
+
+  const tabsEl = document.getElementById('tabs');
+  const missionsEl = document.getElementById('missions');
+
+  CONFIG.missions.forEach((m, i) => {
+    const tab = document.createElement('button');
+    tab.className = 'tab' + (done.includes(i) ? ' done' : '');
+    tab.id = 'tab' + i;
+    tab.innerHTML = (done.includes(i) ? '✅ ' : '') + (i+1);
+    tab.title = m.title;
+    tab.onclick = () => window.switchTo(i);
+    tabsEl.appendChild(tab);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.id = 'card' + i;
+    const isDone = done.includes(i);
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="badge${isDone?' done':''}">${isDone?'✅':i+1}</div>
+        <div><div class="card-title">${m.title}</div><div class="card-sub">${m.hint}</div></div>
+      </div>
+      <div class="video-wrap">
+        ${isYoutube(m.video)
+          ? `<iframe src="${m.video}" allowfullscreen></iframe>`
+          : `<video controls src="${m.video}" playsinline></video>`}
+      </div>
+      ${isDone
+        ? `<div class="feedback ok" style="font-size:1rem;padding:10px 0">✅ ภารกิจนี้ผ่านแล้ว!</div>`
+        : `<div class="input-row">
+             <input type="text" id="inp${i}" placeholder="กรอกคำตอบที่นี่…" autocomplete="off"
+               onkeydown="if(event.key==='Enter') window.checkAnswer(${i})">
+             <button class="btn" onclick="window.checkAnswer(${i})">ส่ง</button>
+           </div>
+           <div class="feedback" id="fb${i}"></div>`}
+      <div class="card-nav">
+        <button class="nav-btn" onclick="window.switchTo(${i-1})" ${i===0?'disabled':''}>← ก่อนหน้า</button>
+        <button class="nav-btn" onclick="window.switchTo(${i+1})" ${i===CONFIG.missions.length-1?'disabled':''}>ถัดไป →</button>
+      </div>`;
+    missionsEl.appendChild(card);
+  });
+
+  window.switchTo(0);
+
+  window.checkAnswer = function(i) {
+    if (done.includes(i)) return;
+    const inp = document.getElementById('inp'+i);
+    const fb  = document.getElementById('fb'+i);
+    const val = inp.value.trim().toLowerCase();
+    const ans = CONFIG.missions[i].answer.trim().toLowerCase();
+
+    if (val === ans) {
+      done.push(i);
+      localStorage.setItem(K_DONE, JSON.stringify(done));
+      inp.className = 'correct';
+      inp.disabled = true;
+      fb.textContent = '✅ ถูกต้อง! เลือกภารกิจถัดไปได้เลย';
+      fb.className = 'feedback ok';
+      document.querySelector('#card'+i+' .badge').textContent = '✅';
+      document.querySelector('#card'+i+' .badge').classList.add('done');
+      const tab = document.getElementById('tab'+i);
+      tab.className = 'tab done' + (current===i ? ' active' : '');
+      tab.innerHTML = '✅ '+(i+1);
+
+      if (done.length === CONFIG.missions.length) {
+        endMs = Date.now();
+        localStorage.setItem(K_END, endMs);
+        setTimeout(showReveal, 700);
+      }
+    } else {
+      wrongs++;
+      localStorage.setItem(K_WRONGS, wrongs);
+      fb.textContent = WRONG_MSGS[Math.floor(Math.random() * WRONG_MSGS.length)];
+      fb.className = 'feedback err';
+      inp.className = 'wrong';
+      setTimeout(() => inp.className = '', 400);
+    }
+  };
+
+  function setStats() {
+    const elapsed = (endMs || Date.now()) - startMs;
+    document.getElementById('revealStats').innerHTML =
+      `⏱️ ใช้เวลา <b>${fmtTime(elapsed)}</b> &nbsp;·&nbsp; ❌ ตอบผิด <b>${wrongs} ครั้ง</b>`;
+  }
+
+  function showReveal() {
+    document.getElementById('revealName').textContent = CONFIG.name;
+    document.getElementById('revealPhoto').src = CONFIG.fullPhoto;
+    document.getElementById('revealMsg').textContent = CONFIG.message;
+    setStats();
+    const rev = document.getElementById('reveal');
+    rev.style.display = 'block';
+    rev.scrollIntoView({behavior:'smooth'});
+    launchConfetti();
+  }
+
+  if (done.length === CONFIG.missions.length) {
+    document.getElementById('revealName').textContent = CONFIG.name;
+    document.getElementById('revealPhoto').src = CONFIG.fullPhoto;
+    document.getElementById('revealMsg').textContent = CONFIG.message;
+    setStats();
+    document.getElementById('reveal').style.display = 'block';
+  }
+
+  function launchConfetti() {
+    const c = document.getElementById('confetti');
+    const ctx = c.getContext('2d');
+    c.width = innerWidth; c.height = innerHeight;
+    const ps = Array.from({length:120},()=>({
+      x:Math.random()*innerWidth, y:Math.random()*-innerHeight,
+      r:4+Math.random()*5, d:2+Math.random()*4,
+      color:`hsl(${Math.random()*360},90%,60%)`, t:Math.random()*10
+    }));
+    let f = 0;
+    (function draw(){
+      ctx.clearRect(0,0,c.width,c.height);
+      ps.forEach(p=>{
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=p.color; ctx.fill();
+        p.y+=p.d; p.x+=Math.sin(f/20+p.t)*1.5;
+        if(p.y>innerHeight){p.y=-10;p.x=Math.random()*innerWidth;}
+      });
+      if(++f<300) requestAnimationFrame(draw);
+      else ctx.clearRect(0,0,c.width,c.height);
+    })();
+  }
+})();
+</script>
+
+<script>
+(function(){
+  let scale = 1;
+  const img = document.getElementById('lb-img');
+  const lb  = document.getElementById('lb');
+
+  window.openLightbox = function(src) {
+    scale = 1;
+    img.src = src;
+    img.style.transform = 'scale(1)';
+    document.getElementById('lb-dl').href = src;
+    lb.classList.add('open');
+  };
+
+  window.closeLightbox = function() { lb.classList.remove('open'); };
+
+  window.lbZoom = function(d) {
+    scale = Math.min(4, Math.max(0.5, scale + d));
+    img.style.transform = `scale(${scale})`;
+  };
+
+  // Click backdrop to close
+  lb.addEventListener('click', e => { if (e.target === lb) closeLightbox(); });
+
+  // Mouse wheel zoom
+  lb.addEventListener('wheel', e => {
+    e.preventDefault();
+    lbZoom(e.deltaY < 0 ? 0.15 : -0.15);
+  }, {passive:false});
+
+  // Pinch zoom (touch)
+  let lastDist = 0;
+  lb.addEventListener('touchmove', e => {
+    if (e.touches.length !== 2) return;
+    e.preventDefault();
+    const d = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    if (lastDist) lbZoom((d - lastDist) * 0.005);
+    lastDist = d;
+  }, {passive:false});
+  lb.addEventListener('touchend', () => { lastDist = 0; });
+})();
+</script>
+
+<script>
+// ── Music ──
+(function(){
+  const audio = document.getElementById('bgm');
+  const btn   = document.getElementById('music-btn');
+  let playing = false;
+
+  function tryPlay() {
+    audio.src = CONFIG.music;
+    audio.play().then(() => { playing = true; btn.textContent = '🔊'; })
+               .catch(() => {});
+  }
+
+  btn.onclick = function() {
+    if (playing) { audio.pause(); playing = false; btn.textContent = '🔇'; }
+    else         { tryPlay(); }
+  };
+
+  // เล่นอัตโนมัติหลัง user interaction ครั้งแรก
+  document.addEventListener('click', function once() {
+    if (!playing) tryPlay();
+    document.removeEventListener('click', once);
+  }, {once: true});
+})();
+
+// ── Hall of Fame ──
+window.submitHof = function() {
+  const inp    = document.getElementById('hof-inp');
+  const status = document.getElementById('hof-status');
+  const name   = inp.value.trim();
+  if (!name) { status.textContent = '⚠️ กรุณากรอกชื่อก่อน'; status.style.color='var(--red)'; return; }
+  if (!CONFIG.sheetsUrl || CONFIG.sheetsUrl === 'YOUR_APPS_SCRIPT_URL') {
+    status.textContent = '⚠️ ยังไม่ได้ตั้งค่า sheetsUrl ใน CONFIG';
+    status.style.color = 'var(--red)'; return;
+  }
+
+  status.textContent = '⏳ กำลังบันทึก…';
+  status.style.color = 'var(--muted)';
+
+  const p = new URLSearchParams({ name, time: new Date().toLocaleString('th-TH') });
+  const img = new Image();
+  img.onload = img.onerror = function() {
+    status.textContent = '✅ บันทึกแล้ว! ชื่อของคุณอยู่ในรายชื่อผู้ผ่านภารกิจ 🏆';
+    status.style.color = 'var(--green)';
+    inp.disabled = true;
+    document.querySelector('#hof .btn').disabled = true;
+  };
+  img.src = CONFIG.sheetsUrl + '?' + p;
+};
+</script>
+</body>
+</html>
