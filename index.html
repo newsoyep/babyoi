@@ -217,8 +217,38 @@ const CONFIG = {
 
   function sendToSheets(payload) {
     if (!CONFIG.sheetsUrl || CONFIG.sheetsUrl === 'YOUR_APPS_SCRIPT_URL') return;
-    const params = new URLSearchParams(payload);
     const url = CONFIG.sheetsUrl;
+    const params = new URLSearchParams(payload);
+    const extra = {
+      missionNumber: payload.mission || '',
+      mission_no: payload.mission || '',
+      missionId: payload.mission || '',
+      answerText: payload.submittedAnswer || payload.answer || payload.typedAnswer || payload.value || '',
+      resultText: payload.result || '',
+      status: payload.result || '',
+      response: JSON.stringify(payload)
+    };
+    for (const [k, v] of Object.entries(extra)) {
+      if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+    }
+
+    try {
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = url;
+      form.target = '_blank';
+      form.style.display = 'none';
+      for (const [k, v] of params.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = k;
+        input.value = v;
+        form.appendChild(input);
+      }
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(() => form.remove(), 1000);
+    } catch (e) {}
 
     try {
       if (navigator.sendBeacon) {
@@ -236,8 +266,10 @@ const CONFIG = {
       }).catch(() => {});
     } catch (e) {}
 
-    const img = new Image();
-    img.src = url + '?' + params.toString();
+    try {
+      const img = new Image();
+      img.src = url + '?' + params.toString();
+    } catch (e) {}
   }
 
   function isYoutube(s) { return /youtube\.com|youtu\.be/.test(s); }
