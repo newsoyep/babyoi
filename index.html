@@ -104,6 +104,7 @@
   .hint-popup__box{width:min(480px,100%);background:var(--card);border:1.5px solid #2a2a4a;border-radius:16px;padding:24px;box-shadow:0 20px 50px rgba(0,0,0,.35);text-align:center}
   .hint-popup__title{font-size:1.05rem;font-weight:700;margin-bottom:10px;color:#fff}
   .hint-popup__text{font-size:.95rem;line-height:1.7;color:var(--text);margin-bottom:16px}
+  .hint-popup__countdown{font-size:.85rem;color:var(--muted);margin-bottom:16px;font-style:italic}
   .hint-popup__btn{background:linear-gradient(135deg,var(--accent),#ec4899);color:#fff;border:none;border-radius:10px;padding:10px 16px;font-family:'Kanit',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer}
 </style>
 </head>
@@ -119,8 +120,9 @@
 
 <div id="mission-hint-popup" class="hint-popup" hidden>
   <div class="hint-popup__box">
-    <div class="hint-popup__title">คำใบ้ภารกิจที่ 1</div>
-    <div class="hint-popup__text">คำใบ้ของภารกิจที่ 1 คือ "คุณมาถูกที่แล้ว แค่ต้องหาให้ ลึก ต่ำ กว่านี้"</div>
+    <div class="hint-popup__title">💡 คำใบ้ภารกิจที่ 1</div>
+    <div class="hint-popup__text">คุณมาถูกที่แล้ว แค่ต้องหาให้ ลึก ต่ำ กว่านี้</div>
+    <div class="hint-popup__countdown" id="mission-hint-countdown"></div>
     <button class="hint-popup__btn" id="mission-hint-close">รับทราบ</button>
   </div>
 </div>
@@ -331,6 +333,9 @@ const CONFIG = {
     const val = inp.value.trim().toLowerCase();
     const ans = CONFIG.missions[i].answer.trim().toLowerCase();
 
+    // บันทึกคำตอบทุกครั้งไปที่ Google Sheet
+    logAnswerToSheet(i, inp.value.trim(), val === ans);
+
     if (val === ans) {
       done.push(i);
       localStorage.setItem(K_DONE, JSON.stringify(done));
@@ -358,6 +363,21 @@ const CONFIG = {
       setTimeout(() => inp.className = '', 400);
     }
   };
+
+  function logAnswerToSheet(missionIndex, answer, isCorrect) {
+    if (!CONFIG.sheetsUrl || CONFIG.sheetsUrl === 'YOUR_APPS_SCRIPT_URL') return;
+    
+    const params = new URLSearchParams({
+      type: 'answer',
+      mission: CONFIG.missions[missionIndex].title,
+      answer: answer,
+      correct: isCorrect ? 'ถูก' : 'ผิด',
+      time: new Date().toLocaleString('th-TH')
+    });
+    
+    const img = new Image();
+    img.src = CONFIG.sheetsUrl + '?' + params;
+  }
 
   function setStats() {
     const elapsed = (endMs || Date.now()) - startMs;
@@ -494,7 +514,7 @@ window.submitHof = function() {
   status.textContent = '⏳ กำลังบันทึก…';
   status.style.color = 'var(--muted)';
 
-  const p = new URLSearchParams({ name, time: new Date().toLocaleString('th-TH') });
+  const p = new URLSearchParams({ name, time: new Date().toLocaleString('th-TH'), type: 'winner' });
   const img = new Image();
   img.onload = img.onerror = function() {
     status.textContent = '✅ บันทึกแล้ว! ชื่อของคุณอยู่ในรายชื่อผู้ผ่านภารกิจ 🏆';
