@@ -121,7 +121,6 @@
   <div class="hint-popup__box">
     <div class="hint-popup__title">คำใบ้ภารกิจที่ 1</div>
     <div class="hint-popup__text">คำใบ้ของภารกิจที่ 1 คือ "คุณมาถูกที่แล้ว แค่ต้องหาให้ ลึก ต่ำ กว่านี้"</div>
-    <div class="hint-popup__text" id="mission-hint-countdown" style="font-size:0.9rem;color:#cbd5e1;">กำลังตรวจสอบเวลา…</div>
     <button class="hint-popup__btn" id="mission-hint-close">รับทราบ</button>
   </div>
 </div>
@@ -215,31 +214,6 @@ const CONFIG = {
     return m > 0 ? `${m} นาที ${s % 60} วินาที` : `${s} วินาที`;
   }
 
-  function sendToSheets(payload) {
-    if (!CONFIG.sheetsUrl || CONFIG.sheetsUrl === 'YOUR_APPS_SCRIPT_URL') return;
-    const params = new URLSearchParams(payload);
-    const url = CONFIG.sheetsUrl;
-
-    try {
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(url, params);
-      }
-    } catch (e) {}
-
-    try {
-      fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
-        body: params.toString(),
-        keepalive: true,
-        mode: 'no-cors'
-      }).catch(() => {});
-    } catch (e) {}
-
-    const img = new Image();
-    img.src = url + '?' + params.toString();
-  }
-
   function isYoutube(s) { return /youtube\.com|youtu\.be/.test(s); }
 
   let current = 0;
@@ -272,7 +246,7 @@ const CONFIG = {
     const hrs = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
     const mins = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
     const secs = Math.max(0, Math.floor((diff % (1000 * 60)) / 1000));
-    hintCountdownEl.textContent = `เหลือเวลา ${hrs} ชั่วโมง ${mins} นาที ${secs} วินาที คำใบ้กำลังจะหมดอายุ! รีบไปหาคำตอบเร็วววว`;
+    hintCountdownEl.textContent = `เหลือเวลา ${hrs} ชั่วโมง ${mins} นาที ${secs} วินาที ก่อนถึงเที่ยงคืนวันที่ 30/06/2569`;
   }
 
   function showMission1HintIfNeeded() {
@@ -356,21 +330,6 @@ const CONFIG = {
     const fb  = document.getElementById('fb'+i);
     const val = inp.value.trim().toLowerCase();
     const ans = CONFIG.missions[i].answer.trim().toLowerCase();
-    const playerName = (document.getElementById('hof-inp').value || '').trim() || 'ไม่ระบุชื่อ';
-    const result = val === ans ? 'correct' : 'wrong';
-
-    localStorage.setItem('babyoi_player_name', playerName);
-    sendToSheets({
-      type: 'mission_answer',
-      name: playerName,
-      mission: String(i + 1),
-      missionTitle: CONFIG.missions[i].title,
-      submittedAnswer: inp.value.trim(),
-      correctAnswer: CONFIG.missions[i].answer.trim(),
-      result,
-      wrongCount: String(wrongs),
-      timestamp: new Date().toLocaleString('th-TH')
-    });
 
     if (val === ans) {
       done.push(i);
@@ -535,16 +494,15 @@ window.submitHof = function() {
   status.textContent = '⏳ กำลังบันทึก…';
   status.style.color = 'var(--muted)';
 
-  sendToSheets({
-    name,
-    time: new Date().toLocaleString('th-TH'),
-    type: 'hall_of_fame'
-  });
-
-  status.textContent = '✅ บันทึกแล้ว! ชื่อของคุณอยู่ในรายชื่อผู้ผ่านภารกิจ 🏆';
-  status.style.color = 'var(--green)';
-  inp.disabled = true;
-  document.querySelector('#hof .btn').disabled = true;
+  const p = new URLSearchParams({ name, time: new Date().toLocaleString('th-TH') });
+  const img = new Image();
+  img.onload = img.onerror = function() {
+    status.textContent = '✅ บันทึกแล้ว! ชื่อของคุณอยู่ในรายชื่อผู้ผ่านภารกิจ 🏆';
+    status.style.color = 'var(--green)';
+    inp.disabled = true;
+    document.querySelector('#hof .btn').disabled = true;
+  };
+  img.src = CONFIG.sheetsUrl + '?' + p;
 };
 </script>
 </body>
