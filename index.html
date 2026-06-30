@@ -121,6 +121,7 @@
   <div class="hint-popup__box">
     <div class="hint-popup__title">คำใบ้ภารกิจที่ 1</div>
     <div class="hint-popup__text">คำใบ้ของภารกิจที่ 1 คือ "คุณมาถูกที่แล้ว แค่ต้องหาให้ ลึก ต่ำ กว่านี้"</div>
+    <div class="hint-popup__text" id="mission-hint-countdown" style="font-size:0.9rem;color:#cbd5e1;">กำลังตรวจสอบเวลา…</div>
     <button class="hint-popup__btn" id="mission-hint-close">รับทราบ</button>
   </div>
 </div>
@@ -246,7 +247,7 @@ const CONFIG = {
     const hrs = Math.max(0, Math.floor(diff / (1000 * 60 * 60)));
     const mins = Math.max(0, Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)));
     const secs = Math.max(0, Math.floor((diff % (1000 * 60)) / 1000));
-    hintCountdownEl.textContent = `เหลือเวลา ${hrs} ชั่วโมง ${mins} นาที ${secs} วินาที ก่อนถึงเที่ยงคืนวันที่ 30/06/2569`;
+    hintCountdownEl.textContent = `เหลือเวลา ${hrs} ชั่วโมง ${mins} นาที ${secs} วินาที คำใบ้กำลังจะหมดอายุ! รีบไปหาคำตอบเร็วววว`;
   }
 
   function showMission1HintIfNeeded() {
